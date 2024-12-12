@@ -1,0 +1,11 @@
+,year,Life Ladder,Log GDP per capita,Social support,Healthy life expectancy at birth,Freedom to make life choices,Generosity,Perceptions of corruption,Positive affect,Negative affect
+year,1.0,0.05,0.08,-0.04,0.17,0.23,0.03,-0.08,0.01,0.21
+Life Ladder,0.05,1.0,0.78,0.72,0.71,0.54,0.18,-0.43,0.52,-0.35
+Log GDP per capita,0.08,0.78,1.0,0.69,0.82,0.36,-0.0,-0.35,0.23,-0.26
+Social support,-0.04,0.72,0.69,1.0,0.6,0.4,0.07,-0.22,0.42,-0.45
+Healthy life expectancy at birth,0.17,0.71,0.82,0.6,1.0,0.38,0.02,-0.3,0.22,-0.15
+Freedom to make life choices,0.23,0.54,0.36,0.4,0.38,1.0,0.32,-0.47,0.58,-0.28
+Generosity,0.03,0.18,-0.0,0.07,0.02,0.32,1.0,-0.27,0.3,-0.07
+Perceptions of corruption,-0.08,-0.43,-0.35,-0.22,-0.3,-0.47,-0.27,1.0,-0.27,0.27
+Positive affect,0.01,0.52,0.23,0.42,0.22,0.58,0.3,-0.27,1.0,-0.33
+Negative affect,0.21,-0.35,-0.26,-0.45,-0.15,-0.28,-0.07,0.27,-0.33,1.0
