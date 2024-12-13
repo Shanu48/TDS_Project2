@@ -150,7 +150,15 @@ def evaluate_graph_with_llm(graph_path):
     except Exception as e:
         return "Error evaluating graph with LLM."
 
-def generate_graphs(df, output_dir, graph_suggestions, readme_path):
+def generate_graphs(df, output_dir, graph_suggestions, readme_path, folder_name):
+    
+    # Open the README file for appending the graphs' details
+    # Check if "Generated Graphs" already exists in the README before writing it
+    with open(readme_path, 'r+', encoding='utf-8') as md_file:
+        content = md_file.read()
+        if "## Generated Graphs" not in content:
+            md_file.write("\n## Generated Graphs\n")
+            
     # Filter out non-numeric columns and avoid columns with 'id' or 'isbn'
     numerical_cols = [
         col for col in df.select_dtypes(include=['number']).columns
@@ -176,10 +184,6 @@ def generate_graphs(df, output_dir, graph_suggestions, readme_path):
     # Initialize an empty list for graph evaluations
     graph_evaluations = []
 
-    # Open the README file for appending the graphs' details
-    with open(readme_path, 'a', encoding='utf-8') as md_file:
-        md_file.write("\n## Generated Graphs\n")
-
     # Generate histograms for each numerical column
     if "histogram" in graphs_to_generate:
         for col in numerical_cols:
@@ -198,9 +202,11 @@ def generate_graphs(df, output_dir, graph_suggestions, readme_path):
             evaluation = evaluate_graph_with_llm(file_path)
             graph_evaluations.append((file_path, evaluation))
 
-            # Write the graph to the README
-            md_file.write(f"\n### Histogram: {col}\n")
-            md_file.write(f"![Histogram for {col}]({file_path})\n")
+            # Write the graph to the README with the correct relative path
+            with open(readme_path, 'a', encoding='utf-8') as md_file:
+                relative_path = os.path.join(folder_name, f"{col}_histogram.png")
+                md_file.write(f"\n### Histogram: {col}\n")
+                md_file.write(f"![Histogram for {col}]({relative_path})\n")
 
     # Generate scatter plots if requested
     if "scatter plot" in graphs_to_generate:
@@ -213,6 +219,8 @@ def generate_graphs(df, output_dir, graph_suggestions, readme_path):
         pass
 
     return graph_evaluations
+
+# Generated Graphs
 
 # Main function
 def main():
@@ -268,7 +276,8 @@ def main():
 
     # Generate the graphs and evaluate them
     graph_suggestions = insights.splitlines()[0]
-    graph_evaluations = generate_graphs(df, output_dir, graph_suggestions, readme_path)
+    # Generate the graphs and evaluate them
+    graph_evaluations = generate_graphs(df, output_dir, graph_suggestions, readme_path, folder_name)
     for graph_path, evaluation in graph_evaluations:
         print(f"Graph: {graph_path}")
         print(f"Evaluation: {evaluation}\n")
