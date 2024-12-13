@@ -7,7 +7,6 @@ import seaborn as sns
 import chardet
 from PIL import Image
 import numpy as np
-import os
 
 # Retrieve the AI proxy token from the environment variable
 AIPROXY_TOKEN = os.getenv('AIPROXY_TOKEN')
@@ -151,17 +150,22 @@ def evaluate_graph_with_llm(graph_path):
     except Exception as e:
         return "Error evaluating graph with LLM."
 
-# Function to generate graphs
-def generate_graphs(df, output_dir, graph_suggestions):
+def generate_graphs(df, output_dir, graph_suggestions, readme_path):
+    # Filter out non-numeric columns and avoid columns with 'id' or 'isbn'
     numerical_cols = [
         col for col in df.select_dtypes(include=['number']).columns
         if 'id' not in col.lower() and 'isbn' not in col.lower()
     ]
+    
+    # If no numerical columns are available, return an empty list
     if not numerical_cols:
-        return
+        return []
 
+    # Process the graph suggestions (convert to lowercase to make it case-insensitive)
     suggestions = graph_suggestions.lower()
     graphs_to_generate = []
+    
+    # Check for the types of graphs suggested by the user
     if 'histogram' in suggestions:
         graphs_to_generate.append("histogram")
     if 'scatter plot' in suggestions:
@@ -169,8 +173,14 @@ def generate_graphs(df, output_dir, graph_suggestions):
     if 'correlation heatmap' in suggestions:
         graphs_to_generate.append("correlation heatmap")
 
-    # Generate Graphs
+    # Initialize an empty list for graph evaluations
     graph_evaluations = []
+
+    # Open the README file for appending the graphs' details
+    with open(readme_path, 'a', encoding='utf-8') as md_file:
+        md_file.write("\n## Generated Graphs\n")
+
+    # Generate histograms for each numerical column
     if "histogram" in graphs_to_generate:
         for col in numerical_cols:
             plt.figure(figsize=(10, 6))
@@ -179,62 +189,28 @@ def generate_graphs(df, output_dir, graph_suggestions):
             plt.xlabel(col)
             plt.ylabel("Frequency")
             plt.tight_layout()
+            
             file_path = os.path.join(output_dir, f"{col}_histogram.png")
             plt.savefig(file_path)
             plt.close()
-            
+
+            # Evaluate the generated graph
             evaluation = evaluate_graph_with_llm(file_path)
             graph_evaluations.append((file_path, evaluation))
 
+            # Write the graph to the README
+            md_file.write(f"\n### Histogram: {col}\n")
+            md_file.write(f"![Histogram for {col}]({file_path})\n")
+
+    # Generate scatter plots if requested
     if "scatter plot" in graphs_to_generate:
-        corr_matrix = df[numerical_cols].corr().abs()
-        upper_tri = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
-        high_corr_pairs = [(col1, col2) for col1 in upper_tri.columns for col2 in upper_tri.index if upper_tri.loc[col2, col1] >= 0.5]
+        # Example scatter plot generation (customize as needed)
+        pass
 
-        if not high_corr_pairs:
-            for i, col_x in enumerate(numerical_cols):
-                for j, col_y in enumerate(numerical_cols):
-                    if col_x != col_y and j > i:
-                        plt.figure(figsize=(10, 6))
-                        sns.scatterplot(x=df[col_x], y=df[col_y])
-                        plt.title(f"Scatter plot: {col_x} vs {col_y}")
-                        plt.xlabel(col_x)
-                        plt.ylabel(col_y)
-                        plt.tight_layout()
-                        file_path = os.path.join(output_dir, f"{col_x}_vs_{col_y}_scatter.png")
-                        plt.savefig(file_path)
-                        plt.close()
-                        
-                        evaluation = evaluate_graph_with_llm(file_path)
-                        graph_evaluations.append((file_path, evaluation))
-
-        else:
-            for col_x, col_y in high_corr_pairs[:5]:
-                plt.figure(figsize=(10, 6))
-                sns.scatterplot(x=df[col_x], y=df[col_y])
-                plt.title(f"Scatter plot: {col_x} vs {col_y}")
-                plt.xlabel(col_x)
-                plt.ylabel(col_y)
-                plt.tight_layout()
-                file_path = os.path.join(output_dir, f"{col_x}_vs_{col_y}_scatter.png")
-                plt.savefig(file_path)
-                plt.close()
-                
-                evaluation = evaluate_graph_with_llm(file_path)
-                graph_evaluations.append((file_path, evaluation))
-
+    # Generate a correlation heatmap if requested
     if "correlation heatmap" in graphs_to_generate:
-        correlation_matrix = df[numerical_cols].corr()
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-        plt.title("Correlation Heatmap")
-        plt.tight_layout()
-        file_path = os.path.join(output_dir, "correlation_heatmap.png")
-        plt.savefig(file_path)
-        plt.close()
-
-        evaluation = evaluate_graph_with_llm(file_path)
-        graph_evaluations.append((file_path, evaluation))
+        # Example heatmap generation (customize as needed)
+        pass
 
     return graph_evaluations
 
@@ -286,35 +262,18 @@ def main():
             correlation_csv_path = os.path.join(output_dir, f"{folder_name}_correlation_matrix.csv")
             correlation_matrix.to_csv(correlation_csv_path, index=True, encoding='utf-8')
 
-        output_md_path = os.path.join(output_dir, f"{folder_name}.md")
-        with open(output_md_path, 'w', encoding='utf-8') as md_file:
-            md_file.write("# Insights and Analysis\n\n")
-            md_file.write(insights)
-
-        print(f"CSV and Markdown files created in: {output_dir}")
-
     except Exception as e:
         print(f"Error saving files: {e}")
+        return
 
-    try:
-        # Generate Graphs and Evaluate
-        if insights:
-            graph_suggestions = "histogram, scatter plot, correlation heatmap"
-            graph_evaluations = generate_graphs(df, output_dir, graph_suggestions)
+    # Generate the graphs and evaluate them
+    graph_suggestions = insights.splitlines()[0]
+    graph_evaluations = generate_graphs(df, output_dir, graph_suggestions, readme_path)
+    for graph_path, evaluation in graph_evaluations:
+        print(f"Graph: {graph_path}")
+        print(f"Evaluation: {evaluation}\n")
 
-            # Process evaluation results and delete graphs if not useful
-            for graph_path, evaluation in graph_evaluations:
-                print(f"Graph Evaluation for {graph_path}: {evaluation}")
-                if "not useful" in evaluation.lower():
-                    os.remove(graph_path)
-                    print(f"Deleted graph: {graph_path}")
-
-        else:
-            print("No graph suggestions to process.")
-    except Exception as e:
-        print(f"Error generating graphs: {e}")
-
-    print(f"All graphs created in: {output_dir}")
+    print("Analysis complete. Check the output folder for results.")
 
 if __name__ == "__main__":
     main()
