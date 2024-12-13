@@ -41,7 +41,7 @@ These insights and visualizations can help in making informed business decisions
 ## Generated Graphs
 
 ### Histogram: books_count
-![Histogram for books_count](goodreads/books_count_histogram.png)
+![Histogram for books_count](goodreads\books_count_histogram.png)
 
 ### Histogram: original_publication_year
 ![Histogram for original_publication_year](goodreads\original_publication_year_histogram.png)
@@ -90,5 +90,7 @@ These insights and visualizations can help in making informed business decisions
 
 ### Correlation Heatmap
 ![Correlation Heatmap](goodreads\correlation_heatmap.png)
+
+## Generated Graphs
 
 ## Generated Graphs
